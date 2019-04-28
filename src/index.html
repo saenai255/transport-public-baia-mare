@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <script>
+    window.logs = [];
+    (() => {
+      const oldLog = console.log;
+      console.log = (...args) => {
+        oldLog(...args);
+        logs.push({
+          timestamp: new Date(),
+          data: args,
+          type: 'log'
+        });
+      };
+
+      const oldInfo = console.info;
+      console.info = (...args) => {
+        oldInfo(...args);
+        logs.push({
+          timestamp: new Date(),
+          data: args,
+          type: 'info'
+        });
+      };
+
+      const oldWarn = console.warn;
+      console.warn = (...args) => {
+        oldWarn(...args);
+        logs.push({
+          timestamp: new Date(),
+          data: args,
+          type: 'warning'
+        });
+      };
+
+      const oldErr = console.error;
+      console.error = (...args) => {
+        oldErr(...args);
+        logs.push({
+          timestamp: new Date(),
+          data: args,
+          type: 'error'
+        });
+      };
+    })();
+  </script>
+  <meta charset="utf-8" />
+  <title>Ionic App</title>
+
+  <base href="/" />
+
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+
+  <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
+
+  <!-- add to homescreen for ios -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDs2r9cuTnt3TsKmNgVxlhqdoHyY5Lgfz0"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/5.10.1/firebase-app.js"></script>
+
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/5.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.10.1/firebase-firestore.js"></script>
+
+  <script>
+    var config = {
+      apiKey: "AIzaSyCIWKUEraLA453ZJ4ZhzcFC-Qmyyu7O7fY",
+      authDomain: "test-6cc98.firebaseapp.com",
+      databaseURL: "https://test-6cc98.firebaseio.com",
+      projectId: "test-6cc98",
+      storageBucket: "test-6cc98.appspot.com",
+      messagingSenderId: "358815259276"
+    };
+    firebase.initializeApp(config);
+  </script>
+</head>
+
+<body>
+  <app-root></app-root>
+</body>
+
+</html>
