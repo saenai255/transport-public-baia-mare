@@ -12,9 +12,15 @@ import { Station } from '../../../../shared/models/station.model';
   template: `
       <ion-header *ngIf="station">
         <ion-toolbar>
-          <ion-title>
-            Statia: {{ station.name }}
-          </ion-title>
+          <ion-row>
+            <ion-title>
+              Statia: {{ station.name }}
+            </ion-title>
+
+            <ion-button (click)="openMaps()">
+              Vezi traseu
+            </ion-button>
+          </ion-row>
         </ion-toolbar>
       </ion-header>
       
@@ -57,6 +63,10 @@ export class StationPageComponent implements OnInit, OnDestroy {
     }, 1000 * 15);
 
     this.incrementHits();
+  }
+
+  openMaps() {
+    window.location.href = `https://www.google.com/maps?saddr=My+Location&daddr=${this.station.coords._lat},${this.station.coords._long}`;
   }
 
   private incrementHits() {

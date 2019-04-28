@@ -4,7 +4,7 @@ import * as firebase from 'firebase';
 export interface PartialStation {
     id: number;
     name: string;
-    coords: { latitude: number, longitude: number };
+    coords: { _lat: number, _long: number };
     arrivesIn?: string;
 }
 
