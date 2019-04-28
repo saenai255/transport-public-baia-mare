@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
-import { Bus, BusStop } from '../../../../shared/models/bus.model';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DataService } from '../../../../shared/services/data.service';
 import { take } from 'rxjs/operators';
@@ -66,7 +65,8 @@ export class StationPageComponent implements OnInit, OnDestroy {
   }
 
   openMaps() {
-    window.location.href = `https://www.google.com/maps?saddr=My+Location&daddr=${this.station.coords._lat},${this.station.coords._long}`;
+    // tslint:disable-next-line:max-line-length
+    window.location.href = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${this.station.coords._lat},${this.station.coords._long}&travelmode=walking`;
   }
 
   private incrementHits() {
