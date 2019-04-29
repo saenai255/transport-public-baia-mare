@@ -12,13 +12,19 @@ import { BusPageComponent } from './pages/bus/bus.page.component';
 import { GoogleMapsComponent } from './components/google-map/google-maps.component';
 import { StationPageComponent } from './pages/station/station.page.component';
 import { LoadingComponent } from './components/loading/loading.component';
+import { GeoService } from '../../shared/services/geo.service';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   imports: [
     IonicModule,
     CommonModule,
     FormsModule,
-    TabsPageRoutingModule
+    TabsPageRoutingModule,
+    HttpClientModule
+  ],
+  providers: [
+      GeoService
   ],
   declarations: [TabsPage, BusesPage, StationsPage, BusPageComponent, GoogleMapsComponent, StationPageComponent, LoadingComponent]
 })

@@ -4,6 +4,7 @@ import Hammer from 'hammerjs';
 import { Router } from '@angular/router';
 import { DataService } from '../../../../shared/services/data.service';
 import { Bus } from '../../../../shared/models/bus.model';
+import { GeoService } from '../../../../shared/services/geo.service';
 
 @Component({
     selector: 'app-buses',
@@ -33,12 +34,13 @@ export class BusesPage implements OnInit {
     buses: Bus[];
 
     constructor(private router: Router,
-                private dataService: DataService) { }
+                private dataService: DataService,
+                private geoService: GeoService
+    ) { }
 
     async ngOnInit() {
         this.handleSwipes();
         this.buses = await this.fetchAndSortStations();
-
         this.dataService.busHitsChanged$.asObservable().subscribe(async () => this.buses = await this.fetchAndSortStations());
     }
 

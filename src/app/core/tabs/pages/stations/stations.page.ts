@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import Hammer from 'hammerjs';
 import { DataService } from '../../../../shared/services/data.service';
 import { Station } from '../../../../shared/models/station.model';
+import { GeoService } from '../../../../shared/services/geo.service';
 
 @Component({
   selector: 'app-stations',
@@ -22,6 +23,7 @@ import { Station } from '../../../../shared/models/station.model';
                 *ngFor="let station of stations">
         <ion-icon slot="start" color="medium" name="pin"></ion-icon>
         <ion-label>Statia {{ station.name }}</ion-label>
+        <ion-text>{{ station.distance }}</ion-text>
       </ion-item>
     </ion-list>
     <app-loading *ngIf="!stations"></app-loading>
@@ -33,7 +35,9 @@ export class StationsPage implements OnInit, OnDestroy {
   stations: Station[];
 
   constructor(private router: Router,
-              private dataService: DataService) { }
+              private dataService: DataService,
+              private geoService: GeoService
+  ) { }
 
   async ngOnInit() {
     this.handleSwipes();
@@ -56,6 +60,10 @@ export class StationsPage implements OnInit, OnDestroy {
 
       return hitsB.value - hitsA.value;
     });
+
+    for (const station of stations) {
+      await this.geoService.calculateDistance(station);
+    }
 
     return stations;
   }
