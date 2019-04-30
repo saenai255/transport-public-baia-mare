@@ -23,7 +23,8 @@ import { GeoService } from '../../../../shared/services/geo.service';
                 *ngFor="let station of stations">
         <ion-icon slot="start" color="medium" name="pin"></ion-icon>
         <ion-label>Statia {{ station.name }}</ion-label>
-        <ion-text>{{ station.distance }}</ion-text>
+        <ion-text *ngIf="station.distance">{{ station.distance }}</ion-text>
+        <ion-icon *ngIf="!station.distance" slot="end" color="medium" name="alert"></ion-icon>
       </ion-item>
     </ion-list>
     <app-loading *ngIf="!stations"></app-loading>

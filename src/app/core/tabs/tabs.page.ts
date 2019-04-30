@@ -10,10 +10,15 @@ import { Component } from '@angular/core';
         <ion-icon name="bus"></ion-icon>
         <ion-label>Busuri</ion-label>
       </ion-tab-button>
-  
+
       <ion-tab-button tab="stations">
         <ion-icon name="pin"></ion-icon>
         <ion-label>Statii</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="donate">
+        <ion-icon name="heart-empty"></ion-icon>
+        <ion-label>Aplicatie</ion-label>
       </ion-tab-button>
     </ion-tab-bar>
   

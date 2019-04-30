@@ -1,13 +1,13 @@
-import { PartialBus } from './bus.model';
+import { BusStop } from './bus.model';
 
-export interface PartialStation {
+export interface Station {
     id: number;
     name: string;
-    coords: { _lat: number, _long: number };
+    latitude: number;
+    longitude: number;
+    stops?: BusStop[];
+
+    // transient
     arrivesIn?: string;
     distance?: string;
-}
-
-export interface Station extends PartialStation {
-    buses: PartialBus[];
 }

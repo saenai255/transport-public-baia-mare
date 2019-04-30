@@ -1,10 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Bus } from '../../../../shared/models/bus.model';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { DataService } from '../../../../shared/services/data.service';
 import { take } from 'rxjs/operators';
-// @ts-ignore
-import Hammer from 'hammerjs';
+import { Station } from '../../../../shared/models/station.model';
 
 @Component({
   selector: 'app-bus',
@@ -18,10 +17,10 @@ import Hammer from 'hammerjs';
       </ion-header>
         
       <ion-content id="bus-content">
-        <app-loading *ngIf="!bus"></app-loading>
+        <app-loading *ngIf="!bus || !stations"></app-loading>
 
-        <ion-list *ngIf="bus">
-          <ion-item *ngFor="let station of bus.stations" 
+        <ion-list *ngIf="bus && stations">
+          <ion-item *ngFor="let station of stations" 
                     lines="full"
                     [routerLink]="['/tabs/stations/' + station.id]">
             <ion-icon slot="start" color="medium" name="pin"></ion-icon>
@@ -33,16 +32,21 @@ import Hammer from 'hammerjs';
   `,
   styleUrls: ['./bus.page.component.scss'],
 })
-export class BusPageComponent implements OnInit {
+export class BusPageComponent implements OnInit, OnDestroy {
   bus: Bus;
+  stations: Station[];
+
+  private refreshId: number;
 
   constructor(private route: ActivatedRoute,
-              private dataService: DataService,
-              private router: Router) { }
+              private dataService: DataService
+  ) { }
 
   async ngOnInit() {
     this.bus = (await this.getBus()) || this.bus;
-    this.handleSwipes();
+    this.stations = await this.getStations();
+    setInterval(async () => this.stations = await this.getStations(), 60 * 1000);
+
     this.incrementHits();
   }
 
@@ -72,13 +76,13 @@ export class BusPageComponent implements OnInit {
     return this.dataService.getBus(id);
   }
 
-  private handleSwipes() {
-    const hammer = new Hammer(document.querySelector('#bus-content'));
-    hammer.on('swipeup', () => {
-      console.log('swipeup');
-
-      // this.router.navigate(['/tabs/stations']);
-    });
+  async getStations() {
+    const stations = await this.dataService.getBusStations(this.bus.id);
+    stations.forEach(station => station.arrivesIn = this.dataService.getRemainingTime(this.bus, station));
+    return stations;
   }
 
+  ngOnDestroy(): void {
+    clearInterval(this.refreshId);
+  }
 }

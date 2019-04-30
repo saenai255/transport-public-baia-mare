@@ -1,10 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { DataService } from '../../../../shared/services/data.service';
 import { take } from 'rxjs/operators';
-// @ts-ignore
-import Hammer from 'hammerjs';
 import { Station } from '../../../../shared/models/station.model';
+import { Bus } from '../../../../shared/models/bus.model';
 
 @Component({
   selector: 'app-bus',
@@ -24,16 +23,16 @@ import { Station } from '../../../../shared/models/station.model';
       </ion-header>
       
       <ion-content id="station-content">
-        <app-loading *ngIf="!station"></app-loading>
-        <div *ngIf="station">
-          <app-google-maps margin-bottom [coords]="{ x: station.coords._lat, y: station.coords._long }"
+        <app-loading *ngIf="!station || !buses"></app-loading>
+        <div *ngIf="station && buses">
+          <app-google-maps margin-bottom [coords]="{ x: station.latitude, y: station.longitude }"
                            style="display: block"
           ></app-google-maps>
 
           <ion-text class="ion-margin-top ion-padding-start">Busurile care trec prin aceasta statie:</ion-text>
 
           <ion-list lines="full">
-            <ion-item [routerLink]="['/tabs/buses/' + bus.id]" *ngFor="let bus of station.buses">
+            <ion-item [routerLink]="['/tabs/buses/' + bus.id]" *ngFor="let bus of buses">
               <ion-icon slot="start" color="medium" name="bus"></ion-icon>
               <ion-label>Linia {{ bus.line }}</ion-label>
               <ion-text>{{ bus.arrivesIn }}</ion-text>
@@ -46,27 +45,25 @@ import { Station } from '../../../../shared/models/station.model';
 })
 export class StationPageComponent implements OnInit, OnDestroy {
   station: Station;
+  buses: Bus[];
+
   private refreshId: number;
 
   constructor(private route: ActivatedRoute,
-              private dataService: DataService,
-              private router: Router) { }
+              private dataService: DataService) { }
 
   async ngOnInit() {
     this.station = (await this.getStation()) || this.station;
-    this.handleSwipes();
+    this.buses = await this.getBuses();
 
-    this.refreshId = setInterval(() => {
-      this.getStation().then(station => this.station = station ? station : this.station);
-
-    }, 1000 * 15);
+    this.refreshId = setInterval(async () => this.buses = await this.getBuses(), 1000 * 60);
 
     this.incrementHits();
   }
 
   openMaps() {
     // tslint:disable-next-line:max-line-length
-    window.location.href = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${this.station.coords._lat},${this.station.coords._long}&travelmode=walking`;
+    window.location.href = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${this.station.latitude},${this.station.longitude}&travelmode=walking`;
   }
 
   private incrementHits() {
@@ -93,18 +90,15 @@ export class StationPageComponent implements OnInit, OnDestroy {
     clearInterval(this.refreshId);
   }
 
+  async getBuses() {
+    const buses = await this.dataService.getStationBuses(this.station.id);
+    buses.forEach(bus => bus.arrivesIn = this.dataService.getRemainingTime(bus, this.station));
+    return buses;
+  }
+
   getStation() {
     let id = null;
     this.route.params.pipe(take(1)).subscribe(params => id = +params.id);
     return this.dataService.getStation(id);
   }
-
-  private handleSwipes() {
-    const hammer = new Hammer(document.querySelector('#station-content'));
-    hammer.on('swipeup', () => {
-      console.log('swipeup');
-    });
-  }
-
-
 }
