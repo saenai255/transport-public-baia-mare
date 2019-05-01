@@ -106,6 +106,8 @@ export class DataService {
       fastest = dateOfNextStop(getFastest(stops), 1);
     }
 
+    fastest.setTime(fastest.getTime() - -new Date().getTimezoneOffset() * 60 * 1000);
+
     let minutes: any = (fastest.getTime() - currentDate.getTime()) / 1000 / 60 % 60;
     minutes = Math.ceil(minutes);
     if (minutes === 0) {

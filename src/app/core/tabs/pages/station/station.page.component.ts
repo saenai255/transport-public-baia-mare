@@ -52,13 +52,14 @@ export class StationPageComponent implements OnInit, OnDestroy {
   constructor(private route: ActivatedRoute,
               private dataService: DataService) { }
 
-  async ngOnInit() {
-    this.station = (await this.getStation()) || this.station;
-    this.buses = await this.getBuses();
+  ngOnInit() {
+    (async () => {
+      this.station = (await this.getStation()) || this.station;
+      this.buses = await this.getBuses();
+      this.incrementHits();
+    })();
 
     this.refreshId = setInterval(async () => this.buses = await this.getBuses(), 1000 * 60);
-
-    this.incrementHits();
   }
 
   openMaps() {

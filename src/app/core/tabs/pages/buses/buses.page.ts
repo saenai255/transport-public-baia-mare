@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { Facebook, FacebookLoginResponse } from '@ionic-native/facebook/ngx';
 // @ts-ignore
 import Hammer from 'hammerjs';
 import { Router } from '@angular/router';
 import { DataService } from '../../../../shared/services/data.service';
 import { Bus } from '../../../../shared/models/bus.model';
+import { throttleTime } from 'rxjs/operators';
 
 @Component({
     selector: 'app-buses',
@@ -33,16 +35,29 @@ export class BusesPage implements OnInit {
     buses: Bus[];
 
     constructor(private router: Router,
-                private dataService: DataService
+                private dataService: DataService,
+                private fb: Facebook
     ) { }
 
-    async ngOnInit() {
-        this.handleSwipes();
-        this.buses = await this.fetchAndSortStations();
-        this.dataService.busHitsChanged$.asObservable().subscribe(async () => this.buses = await this.fetchAndSortStations());
+    fbLogin() {
+        this.fb.login(['public_profile', 'email'])
+            .then((res: FacebookLoginResponse) => console.log('Logged into Facebook!', res))
+            .catch(e => console.log('Error logging into Facebook', e));
+
+
+        this.fb.logEvent(this.fb.EVENTS.EVENT_NAME_ADDED_TO_CART);
     }
 
-    private async fetchAndSortStations() {
+    ngOnInit() {
+        // this.fbLogin();
+        this.handleSwipes();
+        this.fetchAndSortBuses().then(result => this.buses = result);
+        this.dataService.busHitsChanged$.asObservable().pipe(
+            throttleTime(3 * 60 * 1000)
+        ).subscribe(async () => this.buses = await this.fetchAndSortBuses());
+    }
+
+    private async fetchAndSortBuses() {
         let buses = await this.dataService.getBuses();
         buses = buses.sort((a, b) => {
             const hits = JSON.parse(localStorage.getItem('busHits')) || [];

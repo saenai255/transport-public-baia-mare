@@ -42,12 +42,13 @@ export class BusPageComponent implements OnInit, OnDestroy {
               private dataService: DataService
   ) { }
 
-  async ngOnInit() {
-    this.bus = (await this.getBus()) || this.bus;
-    this.stations = await this.getStations();
+  ngOnInit() {
+    (async () => {
+      this.bus = (await this.getBus()) || this.bus;
+      this.stations = await this.getStations();
+      this.incrementHits();
+    })();
     setInterval(async () => this.stations = await this.getStations(), 60 * 1000);
-
-    this.incrementHits();
   }
 
   private incrementHits() {

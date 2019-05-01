@@ -5,6 +5,7 @@ import Hammer from 'hammerjs';
 import { DataService } from '../../../../shared/services/data.service';
 import { Station } from '../../../../shared/models/station.model';
 import { GeoService } from '../../../../shared/services/geo.service';
+import { throttleTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-stations',
@@ -40,11 +41,13 @@ export class StationsPage implements OnInit, OnDestroy {
               private geoService: GeoService
   ) { }
 
-  async ngOnInit() {
+  ngOnInit() {
     this.handleSwipes();
-    this.stations = await this.fetchAndSortStations();
+    this.fetchAndSortStations().then(result => this.stations = result);
 
-    this.dataService.stationHitsChanged$.asObservable().subscribe(async () => this.stations = await this.fetchAndSortStations());
+    this.dataService.stationHitsChanged$.asObservable().pipe(
+        throttleTime(3 * 60 * 1000)
+    ).subscribe(async () => this.stations = await this.fetchAndSortStations());
   }
 
   ngOnDestroy() {
