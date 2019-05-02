@@ -77,10 +77,26 @@ export class BusPageComponent implements OnInit, OnDestroy {
     return this.dataService.getBus(id);
   }
 
-  async getStations() {
-    const stations = await this.dataService.getBusStations(this.bus.id);
-    stations.forEach(station => station.arrivesIn = this.dataService.getRemainingTime(this.bus, station));
-    return stations;
+  async getStations(): Promise<Station[]> {
+    let stops = await this.dataService.getStops();
+    stops = stops.filter(stop =>
+        this.bus.stops.map(item => item.id).includes(stop.id));
+
+    stops = stops.sort((s1, s2) => s1.priority - s2.priority);
+
+    const promises = stops.map(stop => this.dataService.getRemainingTime(this.bus, stop.station));
+    const results = await Promise.all(promises);
+    for (let i = 0; i < stops.length; i++) {
+      stops[i].station.arrivesIn = results[i];
+    }
+
+    return stops.map(stop => stop.station);
+
+    ////
+    // const stations = await this.dataService.getBusStations(this.bus.id);
+    //
+    // stations.forEach(station => station.arrivesIn = this.dataService.getRemainingTime(this.bus, station));
+    // return stations;
   }
 
   ngOnDestroy(): void {

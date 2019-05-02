@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Bus, BusStop } from '../models/bus.model';
+import { Bus, BusStop, STOP_TYPES } from '../models/bus.model';
 import { Station } from '../models/station.model';
 import { Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
@@ -17,6 +17,10 @@ export class DataService {
 
   public async getStations(): Promise<Station[]> {
     return this.httpClient.get<Station[]>(environment.serverUrl + '/stations').toPromise();
+  }
+
+  public async getStops(): Promise<BusStop[]> {
+    return this.httpClient.get<BusStop[]>(environment.serverUrl + '/stops').toPromise();
   }
 
   public async getBuses(): Promise<Bus[]> {
@@ -56,74 +60,104 @@ export class DataService {
     return this.httpClient.get<Station[]>(environment.serverUrl + '/buses/' + id + '/stations').toPromise();
   }
 
-  public getRemainingTime(bus: Bus, station: Station): string {
-    let stops: BusStop[] = station.stops;
+  public async getRemainingTime({ id: busId }: Bus, { id: stationId }: Station): Promise<string> {
+    const [ bus, station ] = await Promise.all([this.getBus(busId), this.getStation(stationId)]);
 
-    const addDays = (date: Date, days: number): Date => {
-      const result = new Date(date);
-      result.setDate(result.getDate() + days);
-      return result;
+    const [stationStops, busStops] = await Promise.all([
+      (async () => {
+        return (await this.getStops()).filter(stop =>
+            station.stops.map(it => it.id).includes(stop.id));
+      })(),
+      (async () => {
+        return (await this.getStops()).filter(stop =>
+            bus.stops.map(it => it.id).includes(stop.id));
+      })()
+    ]);
+
+    bus.stops = busStops;
+    station.stops = stationStops;
+
+
+    const filterStopsForToday = (input: BusStop[], plusDays = 0) => {
+      const today = new Date();
+      today.setDate(today.getDate() + plusDays);
+
+      const day = today.getDay();
+
+      if (day === 7) {
+        return input.filter(stop => stop.type - STOP_TYPES.SUNDAY >= 0);
+      } else if (day === 6) {
+        return input.filter(stop => stop.type - STOP_TYPES.SATURDAY >= 0);
+      }
+
+      return input.filter(stop => stop.type - STOP_TYPES.WEEK >= 0);
     };
 
-    if (new Date().getDay() - 2 >= 4) {
-      stops = bus.stops.filter(stop => !stop.workingDay);
-    } else {
-      stops = bus.stops.filter(stop => stop.workingDay);
-    }
+    let stops = filterStopsForToday(station.stops);
+    stops = stops.filter(stop => bus.stops.map(item => item.bus.id).includes(stop.bus.id));
 
-    const currentDate = new Date();
-    const dateOfNextStop = (stop: BusStop, extraDays = 0): Date => {
-      const stopDate = new Date();
-      const oldDate = new Date(stop.time);
-      stopDate.setHours(oldDate.getHours(), oldDate.getMinutes());
+    const isInFuture = (stop: BusStop): boolean => {
+      const currentDate = new Date();
+      const currentTime = { hour: currentDate.getHours(), minute: currentDate.getMinutes() };
 
-      return addDays(stopDate, extraDays);
+      return currentTime.hour * 60 + currentTime.minute < stop.hour * 60 + stop.minute;
     };
 
-    const allStops = stops.filter(stop => currentDate < dateOfNextStop(stop));
+    const getQuickest = (stop1: BusStop, stop2: BusStop) => {
+      return stop1.hour * 60 + stop1.minute <= stop2.hour * 60 + stop2.minute ? stop1 : stop2;
+    };
 
-    if (stops.length === 0) {
-      stops = allStops.filter(stop => currentDate < dateOfNextStop(stop, 1));
-    }
+    stops = stops.filter(stop => isInFuture(stop));
+
+    let notToday = false;
+    stops = ((allStops) => {
+      let out = allStops;
+
+      let extraDay = 1;
+      while (allStops.length === 0 && extraDay < 7) {
+        out = filterStopsForToday(station.stops, extraDay);
+        extraDay++;
+      }
+
+      notToday = extraDay !== 1;
+      return out;
+    })(stops);
+
 
     if (stops.length === 0) {
       return '??';
     }
-    const getFastest = (busStops: BusStop[]) => {
-      let min = busStops[0];
 
-      for (const stop of busStops) {
-        if (dateOfNextStop(min) > dateOfNextStop(stop)) {
-          min = stop;
-        }
+    const nextStop = stops.reduce((stop1, stop2) => getQuickest(stop1, stop2));
+
+    if (notToday) {
+      return `la ${nextStop.hour}:${nextStop.minute}`;
+    }
+
+    const fastest = new Date();
+    fastest.setHours(nextStop.hour);
+    fastest.setMinutes(nextStop.minute);
+
+    return (function parseDateToDuration(date: Date) {
+      const currentDate = new Date();
+
+      let minutes: any = (date.getTime() - currentDate.getTime()) / 1000 / 60 % 60;
+      minutes = Math.ceil(minutes);
+      if (minutes === 0) {
+        minutes = null;
+      } else {
+        minutes += 'm';
       }
 
-      return min;
-    };
+      let hours: any = (date.getTime() - currentDate.getTime()) / 1000 / 60 / 60;
+      hours = Math.floor(hours);
+      if (hours === 0) {
+        hours = null;
+      } else {
+        hours += 'h';
+      }
 
-    let fastest = dateOfNextStop(getFastest(stops));
-    while (fastest < currentDate) {
-      fastest = dateOfNextStop(getFastest(stops), 1);
-    }
-
-    fastest.setTime(fastest.getTime() - -new Date().getTimezoneOffset() * 60 * 1000);
-
-    let minutes: any = (fastest.getTime() - currentDate.getTime()) / 1000 / 60 % 60;
-    minutes = Math.ceil(minutes);
-    if (minutes === 0) {
-      minutes = null;
-    } else {
-      minutes += 'min';
-    }
-
-    let hours: any = (fastest.getTime() - currentDate.getTime()) / 1000 / 60 / 60;
-    hours = Math.floor(hours);
-    if (hours === 0) {
-      hours = null;
-    } else {
-      hours += 'h';
-    }
-
-    return `${hours ? hours : ''} ${minutes ? minutes : ''}`;
+      return `in ${hours ? hours : ''} ${minutes ? minutes : ''}`;
+    })(fastest);
   }
 }

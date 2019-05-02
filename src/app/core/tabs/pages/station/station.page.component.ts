@@ -93,7 +93,17 @@ export class StationPageComponent implements OnInit, OnDestroy {
 
   async getBuses() {
     const buses = await this.dataService.getStationBuses(this.station.id);
-    buses.forEach(bus => bus.arrivesIn = this.dataService.getRemainingTime(bus, this.station));
+
+    const promises: Promise<string>[] = [];
+    for (const bus of buses) {
+      promises.push(this.dataService.getRemainingTime(bus, this.station));
+    }
+
+    const results = await Promise.all(promises);
+    for (let i = 0; i < buses.length; i++) {
+      buses[i].arrivesIn = results[i];
+    }
+
     return buses;
   }
 
